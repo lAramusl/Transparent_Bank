@@ -19,11 +19,10 @@ public:
 		      std::size_t toCell,
 			long amount);
 
-	void credit(long amount);
-	void deposit(long amount);
+	std::size_t size() const { return _size; }
 
 private:
-	std::size_t size;
+	std::size_t _size;
 	Bank_cell* arr;
 };
 

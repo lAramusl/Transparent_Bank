@@ -2,7 +2,7 @@
 
 CXXFLAGS_E = -Wall -Werror -pthread -o
 
-CXXFLAGS_D = -g -Wall -Werror -pthread
+CXXFLAGS_D = -g -Wall -Werror -pthread -fsanitize=address -o
 
 CXXFLAGS_O = -c -pthread 
 
@@ -12,6 +12,12 @@ main: $(BANK_E) init.o client.o destroy.o
 	g++ bank_init.o $(BANK_E) $(CXXFLAGS_E) init
 	g++ client.o $(BANK_E) $(CXXFLAGS_E) client
 	g++ bank_destroy.o $(BANK_E) $(CXXFLAGS_E) destroy
+	rm *.o
+
+debug: $(BANK_E) init.o client.o destroy.o
+	g++ bank_init.o $(BANK_E) $(CXXFLAGS_D) init
+	g++ client.o $(BANK_E) $(CXXFLAGS_D) client
+	g++ bank_destroy.o $(BANK_E) $(CXXFLAGS_D) destroy
 	rm *.o
 
 clean:

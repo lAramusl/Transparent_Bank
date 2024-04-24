@@ -10,7 +10,7 @@ Bank_cell::Bank_cell(std::size_t index) :
 	frozenState(false)
 {
 	semf = sem_open(("/cellSem"+std::to_string(index)).data(),
-  O_CREAT|O_RDWR|O_TRUNC,
+  O_CREAT|O_RDWR,
   0666, 
   1);
 	std::cout << "Bank_cell " << index << ": constructed successfully\n";
@@ -32,6 +32,11 @@ int Bank_cell::changeMax(long amount)
 	{
 		currentAmount = amount;
 	}
+	if(amount <= minAmount)
+	{
+		std::cout << "Invalid Amount\n";
+		return 2;
+	}
 	maxAmount = amount;
 	return 0;
 }
@@ -43,12 +48,22 @@ int Bank_cell::changeMin(long amount)
 		std::cout << "Cell " << index << ": cannot change, add some amount first\n";
 		return 1;
 	}
+	if(amount >= maxAmount)
+	{
+		std::cout << "Invalid Amount\n";
+		return 2;
+	}
 	minAmount = amount;
 	return 0;
 }
 
 int Bank_cell::deposit(long amount)
 {
+	if(isFrozen())
+	{
+		std::cout << "Cell " << index << "is frozen\n";
+		return 2;
+	}
 	if(currentAmount + amount > maxAmount)
 	{
 		std::cout << "Cell " << index << ": this amount wont fit into cell\n";
@@ -60,9 +75,14 @@ int Bank_cell::deposit(long amount)
 
 int Bank_cell::credit(long amount)
 {
-	if(currentAmount - amount > maxAmount)
+	if(isFrozen())
 	{
-		std::cout << "Cell " << index << ": the cell does not contain such amount";
+		std::cout << "Cell " << index << "is frozen\n";
+		return 2;
+	}
+	if(currentAmount - amount < minAmount)
+	{
+		std::cout << "Cell " << index << ": the cell does not contain such amount\n";
 		return 1;
 	}
 	currentAmount -= amount;
@@ -92,6 +112,20 @@ const std::size_t Bank_cell::getIndex() const
 bool Bank_cell::isFrozen() const
 {
 	return frozenState;
+}
+
+void Bank_cell::openSem()
+{
+	semf = sem_open(("/cellSem"+std::to_string(index)).data(), O_RDWR, 0666, 1);
+}
+
+void Bank_cell::closeSem()
+{
+	if(sem_close(semf) == -1)
+	{
+		std::cerr << "sem_close of " << index << ": could not close\n";
+		exit(errno);
+	}
 }
 
 void Bank_cell::wait()

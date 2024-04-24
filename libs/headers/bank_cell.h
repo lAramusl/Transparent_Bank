@@ -24,6 +24,9 @@ public:
 	const std::size_t getIndex() const;
 	bool isFrozen() const;
 
+	void openSem();
+	void closeSem();
+
   	void wait();
   	void post();
 

@@ -2,7 +2,7 @@
 #include <iostream>
 
 Bank::Bank(std::size_t size, Bank_cell* ptr)
-  : size(size), arr(ptr) 
+  : _size(size), arr(ptr) 
 {
   std::cout << "Bank: Constructed successfuly\n";
 }
@@ -29,22 +29,13 @@ void Bank::transfer(std::size_t fromCell, std::size_t toCell, long amount)
 		std::cout << "Cell " << arr[toCell].getIndex() << " is frozen\ntransfer is impossible\n";
 		return;
 	}
-	arr[fromCell].credit(amount);
-	arr[toCell].deposit(amount);
-}
-
-void Bank::credit(long amount)
-{
-	for(std::size_t i = 0; i < size; ++i)
+	if(arr[fromCell].credit(amount) == 1)
 	{
-		arr[i].credit(amount);
+		return;
 	}
-}
-
-void Bank::deposit(long amount)
-{
-	for(std::size_t i = 0; i < size; ++i)
+	if(arr[toCell].deposit(amount) == 1)
 	{
-		arr[i].deposit(amount);
+		arr[fromCell].deposit(amount);
+		return;
 	}
 }
