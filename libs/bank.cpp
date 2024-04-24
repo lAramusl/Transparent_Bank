@@ -17,79 +17,27 @@ const Bank_cell& Bank::operator[](std::size_t cellNum) const
 	return arr[cellNum];
 }
 
-long Bank::getMaxBalance(std::size_t cellNum)
-{
-	return arr[cellNum].getMax();
-}
-
-long Bank::getMinBalance(std::size_t cellNum)
-{
-	return arr[cellNum].getMin();
-}
-
-long Bank::getBalance(std::size_t cellNum)
-{
-	return arr[cellNum].getCurrent();
-}
-
 void Bank::transfer(std::size_t fromCell, std::size_t toCell, long amount)
 {
-	if(arr[fromCell].getCurrent() - amount < arr[fromCell].getMin())
+	if(arr[fromCell].isFrozen())
 	{
-		std::cout << "Not enough amount of money, transfer impossible\n";
+		std::cout << "Cell " << arr[fromCell].getIndex() << " is frozen\ntransfer is impossible\n";
 		return;
 	}
-	if(arr[toCell].getCurrent() + amount > arr[toCell].getMax())
+	else if(arr[toCell].isFrozen())
 	{
-		std::cout << "Too big amount of money, transfer impossible\n";
+		std::cout << "Cell " << arr[toCell].getIndex() << " is frozen\ntransfer is impossible\n";
 		return;
 	}
 	arr[fromCell].credit(amount);
 	arr[toCell].deposit(amount);
 }
 
-void Bank::freezeCell(std::size_t cellNum)
-{
-	arr[cellNum].freeze();
-}
-
-void Bank::unFreezeCell(std::size_t cellNum)
-{
-	arr[cellNum].freeze();
-}
-
-bool Bank::isFrozen(std::size_t cellNum)
-{
-	return arr[cellNum].isFrozen();
-}
-
-void Bank::creditFrom(std::size_t cellNum, long amount)
-{
-	if(arr[cellNum].getCurrent() - amount < arr[cellNum].getMin())
-	{
-		std::cout <<"Cell Number: " << cellNum
-			<<"\nCannot credit, no enough amount of money\n";
-		return;
-	}
-	arr[cellNum].credit(amount);
-}
-
-void Bank::depositTo(std::size_t cellNum, long amount)
-{
-	if(arr[cellNum].getCurrent() + amount > arr[cellNum].getMax())
-	{
-		std::cout <<"Cell Number: "<< cellNum
-			<< "\nCannot deposit, not enough space for money\n";
-		return;
-	}
-	arr[cellNum].credit(amount);
-}
-
 void Bank::credit(long amount)
 {
 	for(std::size_t i = 0; i < size; ++i)
 	{
-		creditFrom(i, amount);
+		arr[i].credit(amount);
 	}
 }
 
@@ -97,6 +45,6 @@ void Bank::deposit(long amount)
 {
 	for(std::size_t i = 0; i < size; ++i)
 	{
-		depositTo(i, amount);
+		arr[i].deposit(amount);
 	}
 }

@@ -12,24 +12,28 @@ public:
 	void freeze();
 	void unfreeze();
 
-	void deposit(long Amount);
-	void credit(long Amount);
+	int deposit(long Amount);
+	int credit(long Amount);
 	
-	const long getMax();
-	const long getMin();
-	const long getCurrent();
-	bool isFrozen();
+	int changeMax(long amount);
+	int changeMin(long amount);
 
-  void post();
-  void wait();
+	const long getMax() const;
+	const long getMin() const;
+	const long getCurrent() const;
+	const std::size_t getIndex() const;
+	bool isFrozen() const;
+
+  	void wait();
+  	void post();
 
 private:
-  std::size_t index;
+  	std::size_t index;
 	long minAmount;
 	long maxAmount;
 	long currentAmount;
 	bool frozenState;
-  sem_t* semf;
+  	sem_t* semf;
 
 };
 
