@@ -12,12 +12,13 @@
 void BankAction(const std::string& cmd, Bank& bnk)
 {
 	static const std::vector<std::string> commands = 
-	{ "get_max", "get_min", "get_ballance", 
+	{ "getmax", "getmin", "getballance", 
 	  "transfer", 
 	  "freeze", "unfreeze",
-	  "credit_from", "deposit_to",
+	  "creditfrom", "depositto",
 	  "credit", "deposit",
-	  "change_max", "change_min"};
+	  "changemax", "changemin",
+	  "info"};
 
 	auto it = std::find(commands.begin(), commands.end(), cmd);
 
@@ -212,6 +213,27 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			}
 			bnk[cellNum].post();
 		}
+		case 12://info
+		{
+			std::size_t cellNum = 0;
+			std::cin >> cellNum;
+			if(cellNum >= bnk.size())
+			{
+				std::cout << "Invalid bank cell number\n";
+			}
+			bnk[cellNum].wait();
+			std::string state = "is not frozen";
+			if(bnk[cellNum].isFrozen())
+			{
+				state = "frozen";
+			}
+			std::cout << "Info of Cell " << cellNum 
+				<< ":\nmin: " << bnk[cellNum].getMin()
+				<< "\nballance: " << bnk[cellNum].getCurrent()
+				<< "\nmax: " << bnk[cellNum].getMax()
+				<< "\nstate: " << state << std::endl;
+			bnk[cellNum].post();
+		}
 	}
 
 }
@@ -250,8 +272,6 @@ int main(int argc,char** argv)
 		BankAction(cmd, bnk);
 	}
 
-	//std::cout << bnk[0].getMax() <<std::endl;
-
 	for(std::size_t i = 0; i < bnk.size(); ++i)
 	{
 		bnk[i].closeSem();
@@ -269,7 +289,7 @@ int main(int argc,char** argv)
 		exit(errno);
 	}
 
-	std::cout << "This bank is sponsored by 1xBET\n";
+	std::cout << "Thank you for using our Bank\n";
 
 	return 0;
 }

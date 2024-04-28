@@ -38,4 +38,6 @@ void Bank::transfer(std::size_t fromCell, std::size_t toCell, long amount)
 		arr[fromCell].deposit(amount);
 		return;
 	}
+	std::cout << "acomplished\n";
+	return;
 }
