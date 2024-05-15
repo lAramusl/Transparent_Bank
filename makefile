@@ -17,6 +17,14 @@ release: $(BANK) init.o client.o destroy.o
 	g++ client.o $(BANK) $(CXXFLAGS) client
 	g++ bank_destroy.o $(BANK) $(CXXFLAGS) destroy
 
+releaseServer: $(BANK) server.o serverClient.o
+	g++ server.o $(BANK) $(CXXFLAGS) server
+	g++ server_client.o $(BANK) $(CXXFLAGS) server_client
+
+debugServer: $(DEBUGBANK) serverDebug.o serverClientDebug.o
+	g++ server.o $(DEBUGBANK) $(DEBUGCXXFLAGS) server
+	g++ server_client.o $(DEBUGBANK) $(DEBUGCXXFLAGS) server_client
+
 debug: $(DEBUGBANK) initDebug.o clientDebug.o destroyDebug.o
 	g++ bank_init.o $(DEBUGBANK) $(DEBUGCXXFLAGS) init
 	g++ client.o $(DEBUGBANK) $(DEBUGCXXFLAGS) client
@@ -38,6 +46,12 @@ init.o: bank_init.cpp
 client.o: client.cpp
 	g++ client.cpp $(OBJECT)
 
+server.o: server.cpp
+	g++ server.cpp $(OBJECT)
+
+server_client.o: server_client.cpp
+	g++ server_client.cpp $(OBJECT)
+
 destroy.o: bank_destroy.cpp
 	g++ bank_destroy.cpp $(OBJECT)
 
@@ -55,3 +69,9 @@ clientDebug.o: client.cpp
 
 destroyDebug.o: bank_destroy.cpp
 	g++ bank_destroy.cpp $(DEBUGOBJECT)
+
+serverDebug.o: server.cpp
+	g++ server.cpp $(DEBUGOBJECT)
+
+server_clientDebug.o: server_client.cpp
+	g++ server_client.cpp $(DEBUGOBJECT)

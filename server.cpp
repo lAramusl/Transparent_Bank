@@ -206,6 +206,10 @@ std::stringstream BankAction(std::stringstream& in, Bank& bnk)
 				{
 					out << "Cell " << i << ": " << acomplished;
 				}
+                else
+                {
+                    out << "Cell " << i << ": " << "cannot credit\n";
+                }
 				bnk[i].post();
 			}
 			break;
@@ -213,14 +217,18 @@ std::stringstream BankAction(std::stringstream& in, Bank& bnk)
 		case 9://deposit
 		{
 			std::size_t amount = 0;
-			std::cin >> amount;
+			in >> amount;
 			for(std::size_t i = 0; i < bnk.size(); ++i)
 			{
 				bnk[i].wait();
 				if(bnk[i].deposit(amount) == 0)
 				{
-					std::cout << "Cell " << i << ": " << acomplished;
+					out << "Cell " << i << ": " << acomplished;
 				}
+                else
+                {
+                    out << "Cell " << i << ": " << "cannot deposit\n";
+                }
 				bnk[i].post();
 			}
 			break;
@@ -229,61 +237,78 @@ std::stringstream BankAction(std::stringstream& in, Bank& bnk)
 		{
 			std::size_t cellNum = 0;
 			long newMax = 0;
-			std::cin >> cellNum >> newMax;
+			in >> cellNum >> newMax;
 			if(cellNum >= bnk.size())
 			{
-				std::cout << "Invalid bank cell number\n";
+				out << "Invalid bank cell number\n";
 			}
-			bnk[cellNum].wait();
-			if(bnk[cellNum].changeMax(newMax) == 0)
-			{
-				std::cout << acomplished;
-			}
-			bnk[cellNum].post();
+            else
+            {
+			    bnk[cellNum].wait();
+			    if(bnk[cellNum].changeMax(newMax) == 0)
+			    {
+			    	out << acomplished;
+			    }
+                else
+                {
+                    out << "invalid amount\n";
+                }
+			    bnk[cellNum].post();
+            }
 		}
 		case 11://change_min
 		{
 			std::size_t cellNum = 0;
 			long newMin = 0;
-			std::cin >> cellNum >> newMin;
+			in >> cellNum >> newMin;
 			if(cellNum >= bnk.size())
 			{
-				std::cout << "Invalid bank cell number\n";
+				out << "Invalid bank cell number\n";
 			}
-			bnk[cellNum].wait();
-			if(bnk[cellNum].changeMin(newMin) == 0)
-			{
-				std::cout << acomplished;
-			}
-			bnk[cellNum].post();
+            else
+            {
+			    bnk[cellNum].wait();
+			    if(bnk[cellNum].changeMin(newMin) == 0)
+			    {
+			    	out << acomplished;
+			    }
+                else
+                {
+                    out << "invalid amount\n";
+                }
+			    bnk[cellNum].post();
+            }
 		}
 		case 12://info
 		{
 			std::size_t cellNum = 0;
-			std::cin >> cellNum;
+			in >> cellNum;
 			if(cellNum >= bnk.size())
 			{
-				std::cout << "Invalid bank cell number\n";
+				out << "Invalid bank cell number\n";
 			}
-			bnk[cellNum].wait();
-			std::string state = "is not frozen";
-			if(bnk[cellNum].isFrozen())
-			{
-				state = "frozen";
-			}
-			std::cout << "Info of Cell " << cellNum 
-				<< ":\nmin: " << bnk[cellNum].getMin()
-				<< "\nballance: " << bnk[cellNum].getCurrent()
-				<< "\nmax: " << bnk[cellNum].getMax()
-				<< "\nstate: " << state << std::endl;
-			bnk[cellNum].post();
+            else
+            {
+			    bnk[cellNum].wait();
+			    std::string state = "is not frozen";
+			    if(bnk[cellNum].isFrozen())
+			    {
+			    	state = "frozen";
+			    }
+			        out << "Info of Cell " << cellNum 
+			    	<< ":\nmin: " << bnk[cellNum].getMin()
+			    	<< "\nballance: " << bnk[cellNum].getCurrent()
+			    	<< "\nmax: " << bnk[cellNum].getMax()
+			    	<< "\nstate: " << state << "\n";
+			    bnk[cellNum].post();
+            }
 		}
 	}
 
     return out;
 }
 
-void clientHandler(int client_socket, std::string clientIP)
+void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
 {
   // Receive messages from client
   std::size_t client_num = clientNum;
@@ -314,7 +339,12 @@ void clientHandler(int client_socket, std::string clientIP)
         buffer[rs] = '\0';
         ss << buffer << "\n";
       }
-
+     std::stringstream result = BankAction(ss, bnk);
+     int snd = send(client_socket, result.str().c_str(), result.str().size(), 0);
+     if( snd == -1)
+     {
+        perror("client message send error");
+     }
   }
   return;
 }
@@ -387,7 +417,7 @@ int main(int argc,char** argv)
       {
         if(!threadPool[i].joinable())
         {
-            threadPool[i] = std::thread(clientHandler,client_socket,inet_ntoa(client_address.sin_addr));
+            threadPool[i] = std::thread(clientHandler, client_socket,inet_ntoa(client_address.sin_addr), bnk);
             clientNum.fetch_add(1);
         }
       }
