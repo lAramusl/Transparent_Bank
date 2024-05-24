@@ -17,11 +17,11 @@ release: $(BANK) init.o client.o destroy.o
 	g++ client.o $(BANK) $(CXXFLAGS) client
 	g++ bank_destroy.o $(BANK) $(CXXFLAGS) destroy
 
-releaseServer: $(BANK) server.o serverClient.o
+releaseServer: $(BANK) server.o server_client.o
 	g++ server.o $(BANK) $(CXXFLAGS) server
 	g++ server_client.o $(BANK) $(CXXFLAGS) server_client
 
-debugServer: $(DEBUGBANK) serverDebug.o serverClientDebug.o
+debugServer: $(DEBUGBANK) serverDebug.o server_clientDebug.o
 	g++ server.o $(DEBUGBANK) $(DEBUGCXXFLAGS) server
 	g++ server_client.o $(DEBUGBANK) $(DEBUGCXXFLAGS) server_client
 
@@ -31,7 +31,7 @@ debug: $(DEBUGBANK) initDebug.o clientDebug.o destroyDebug.o
 	g++ bank_destroy.o $(DEBUGBANK) $(DEBUGCXXFLAGS) destroy
 
 clean:
-	rm -f init client destroy
+	rm -f init client destroy server server_client
 	rm *.o
 
 bank_cell.o: libs/bank_cell.cpp libs/headers/bank_cell.h

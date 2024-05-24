@@ -14,13 +14,14 @@
 #include <thread>
 #include <atomic>
 #include <sstream>
+#include <functional>
 
 static std::atomic<std::size_t> clientNum(0);
 
 std::stringstream BankAction(std::stringstream& in, Bank& bnk)
 {
     std::stringstream out;
-
+	std::cout << "BankAction:\n";
 	static const std::vector<std::string> commands = 
 	{ "getmax", "getmin", "getballance", 
 	  "transfer", 
@@ -311,10 +312,12 @@ std::stringstream BankAction(std::stringstream& in, Bank& bnk)
 void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
 {
   // Receive messages from client
+  std::cout << "clientHandler:\n";
   std::size_t client_num = clientNum;
-  while(true)
+ while(true)
   {
       std::stringstream ss;
+	  std::stringstream cmd;
       char buffer[3001];
       int rs = recv(client_socket, buffer, 3000, 0);
       if (rs == -1) {
@@ -323,31 +326,35 @@ void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
         exit(1);
       }
       
-      ss << "From client " << clientIP << " number " << client_num << " ";
-      
-      std::string message(buffer);
-      if(message == "disconnect" && rs > 0)
+      ss << "From client " << clientIP << " number " << client_num << ":\n" << buffer << '\n';
+     // std::cout << ss.str();
+      if(buffer == "disconnect")
       {
         ss << "client is disconnecting\n";//вот тут когда disconnect получает то падает в беск. цикл
         close(client_socket);
         clientNum.fetch_sub(1);
         std::cout << ss.str();
-        break;
+       	break;
       }
       else if (rs > 0) {
-        ss << "Got command:\n";
-        buffer[rs] = '\0';
+        ss << "Got command:\n ";
         ss << buffer << "\n";
+		cmd << buffer << "\n";
+		std::cout << ss.str();
+        buffer[rs] = '\0';
       }
-     std::stringstream result = BankAction(ss, bnk);
-     int snd = send(client_socket, result.str().c_str(), result.str().size(), 0);
-     if( snd == -1)
-     {
-        perror("client message send error");
-     }
-  }
+		std::stringstream result = BankAction(cmd, bnk);
+		std::string res = result.str();
+		std::cout << res << std::endl;
+		int snd = send(client_socket, res.c_str(), res.size(), 0);
+		if( snd == -1)
+		{
+			perror("client message send error");
+		}
+ 	}
   return;
 }
+
 
 int main(int argc,char** argv)
 {
@@ -398,10 +405,7 @@ int main(int argc,char** argv)
   }
   std::cout << "Waiting for connection\n";
 
-    std::vector<std::thread> threadPool;
-	while(true)
-	{
-      int client_socket;
+	int client_socket;
       struct sockaddr_in client_address;
       unsigned int client_addr_len = sizeof(client_address);
 
@@ -410,27 +414,26 @@ int main(int argc,char** argv)
           perror("accept failed");
           exit(errno);
       }
+    //std::vector<std::thread> threadPool;
+	//while(true)
+	//{
+      
 
-      std::cout<< " Connected client with address: " << inet_ntoa(client_address.sin_addr) << "\n";
+      		std::cout<< " Connected client with address: " << inet_ntoa(client_address.sin_addr) << "\n";
 
-      for(std::size_t i = 0 ; i < threadPool.size(); ++i)
-      {
-        if(!threadPool[i].joinable())
-        {
-            threadPool[i] = std::thread(clientHandler, client_socket,inet_ntoa(client_address.sin_addr), bnk);
-            clientNum.fetch_add(1);
-        }
-      }
-    
-	}
+           clientHandler(client_socket, inet_ntoa(client_address.sin_addr), std::ref<Bank>(bnk));
 
-    for (auto& thread : threadPool)
-    {
-        if (thread.joinable())
-        {
-            thread.join();
-        }
-    }
+            //clientNum.fetch_add(1);
+        
+	//}
+
+    // for (auto& thread : threadPool)
+    // {
+    //     if (thread.joinable())
+    //     {
+    //         thread.join();
+    //     }
+    // }
 
 	for(std::size_t i = 0; i < bnk.size(); ++i)
 	{

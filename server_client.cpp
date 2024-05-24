@@ -38,7 +38,7 @@ int main(){
     // send message to server
     const int buffsize = 3000;
     char buffer[3001];
-    std::cin >> mess;
+    std::getline(std::cin, mess);
     std::cout << "the message is : " << mess << "\n";
     std::cout<<"sending...\n";
     int sent = send(client_socket, mess.c_str(), mess.size(), 0);
@@ -60,6 +60,7 @@ int main(){
         close(client_socket);
         exit(errno);
     }
+    std::cout << buffer << "\n";
   }
   std::cout<<"disconnected successfully\n";
   close(client_socket);
