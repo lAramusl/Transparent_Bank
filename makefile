@@ -11,24 +11,25 @@ DEBUGOBJECT = -g $(OBJECT)
 BANK = bank.o bank_cell.o
 
 DEBUGBANK = bankDebug.o bank_cellDebug.o 
+
  
 release: $(BANK) init.o client.o destroy.o
 	g++ bank_init.o $(BANK) $(CXXFLAGS) init
 	g++ client.o $(BANK) $(CXXFLAGS) client
 	g++ bank_destroy.o $(BANK) $(CXXFLAGS) destroy
 
-releaseServer: $(BANK) server.o server_client.o
-	g++ server.o $(BANK) $(CXXFLAGS) server
-	g++ server_client.o $(BANK) $(CXXFLAGS) server_client
-
-debugServer: $(DEBUGBANK) serverDebug.o server_clientDebug.o
-	g++ server.o $(DEBUGBANK) $(DEBUGCXXFLAGS) server
-	g++ server_client.o $(DEBUGBANK) $(DEBUGCXXFLAGS) server_client
-
 debug: $(DEBUGBANK) initDebug.o clientDebug.o destroyDebug.o
 	g++ bank_init.o $(DEBUGBANK) $(DEBUGCXXFLAGS) init
 	g++ client.o $(DEBUGBANK) $(DEBUGCXXFLAGS) client
 	g++ bank_destroy.o $(DEBUGBANK) $(DEBUGCXXFLAGS) destroy
+
+releaseServer: release $(BANK) server.o server_client.o 
+	g++ server.o $(BANK)  $(CXXFLAGS) server
+	g++ server_client.o $(BANK) $(CXXFLAGS) server_client
+
+debugServer: debug $(DEBUGBANK) serverDebug.o server_clientDebug.o 
+	g++ server.o $(DEBUGBANK) $(DEBUGCXXFLAGS) server
+	g++ server_client.o $(DEBUGBANK) $(DEBUGCXXFLAGS) server_client
 
 clean:
 	rm -f init client destroy server server_client
@@ -46,8 +47,8 @@ init.o: bank_init.cpp
 client.o: client.cpp
 	g++ client.cpp $(OBJECT)
 
-server.o: server.cpp
-	g++ server.cpp $(OBJECT)
+server.o: server.cpp 
+	g++ server.cpp $(OBJECT) 
 
 server_client.o: server_client.cpp
 	g++ server_client.cpp $(OBJECT)
@@ -71,7 +72,8 @@ destroyDebug.o: bank_destroy.cpp
 	g++ bank_destroy.cpp $(DEBUGOBJECT)
 
 serverDebug.o: server.cpp
-	g++ server.cpp $(DEBUGOBJECT)
+	g++ server.cpp $(THREADPOOL) $(DEBUGOBJECT)
 
 server_clientDebug.o: server_client.cpp
 	g++ server_client.cpp $(DEBUGOBJECT)
+

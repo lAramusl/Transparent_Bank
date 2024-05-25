@@ -12,16 +12,35 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <thread>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
 #include <atomic>
+#include <future>
 #include <sstream>
 #include <functional>
+
+class ThreadPool {
+public:
+    ThreadPool(size_t);
+
+    template<class F, class... Args>
+    void enqueue(F&& f, Args&&... args);
+
+    ~ThreadPool();
+private:
+    std::vector<std::thread> workers;
+    std::queue<std::function<void()>> tasks;
+    std::mutex queue_mutex;
+    std::condition_variable condition;
+    bool stop;
+};
 
 static std::atomic<std::size_t> clientNum(0);
 
 std::stringstream BankAction(std::stringstream& in, Bank& bnk)
 {
     std::stringstream out;
-	std::cout << "BankAction:\n";
 	static const std::vector<std::string> commands = 
 	{ "getmax", "getmin", "getballance", 
 	  "transfer", 
@@ -311,13 +330,15 @@ std::stringstream BankAction(std::stringstream& in, Bank& bnk)
 
 void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
 {
-  // Receive messages from client
-	std::cout << "clientHandler:\n\n";
 	const int bufferSize = 4096;
 	std::string disc = "disconnect";
-	while(true)
+	bool isConnected = true;
+	bool errorHappened = false;
+	std::size_t num = clientNum;
+
+	while(isConnected)
 	{
-		//std::stringstream ss;
+		std::stringstream info;
 		std::stringstream cmd;
 		std::string buffer;
 		buffer.resize(bufferSize);
@@ -326,37 +347,42 @@ void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
 		if (rs == -1) 
 		{
 			perror("client socket connection error");
-			close(client_socket);
-			exit(1);
+			errorHappened = true;
+			break;
 		}
-		std::cout << "\"" << buffer << "\"\n"; 
-		buffer.shrink_to_fit();
+		info << "From client: " << clientIP << " number: " << num << ": " << buffer << '\n';
+		std::cout << info.str();
 		if(buffer.data() == disc)
 		{
-			std::cout << "i am in if section\n";
-			break;//add try finally
+			isConnected = false;
+			int snd = send(client_socket, "Thank you for using our Bank\n", 30, 0);
+			if(snd == -1)
+			{
+				perror("client message send error");
+				errorHappened = true;
+			}
+			clientNum.fetch_sub(1);
 		}
-		//ss << "From client " << clientIP << " number: " << buffer << '\n';
-		cmd << buffer;
-		//std::cout << ss.str();
-
-		std::stringstream result = BankAction(cmd, bnk);
-		std::string res = result.str();
-		std::cout << res << std::endl;
-		int snd = send(client_socket, res.c_str(), res.size(), 0);
-		if(snd == -1)
+		else
 		{
-			perror("client message send error");
-			close(client_socket);
-			exit(1);
+			cmd << buffer;
+			std::stringstream result = BankAction(cmd, bnk);
+			std::string res = result.str();
+			int snd = send(client_socket, res.c_str(), res.size(), 0);
+			if(snd == -1)
+			{
+				perror("client message send error");
+				errorHappened = true;
+				break;
+			}
 		}
 	
 	}
-	//ss << "client is disconnecting\n";
 	close(client_socket);
-	clientNum.fetch_sub(1);
-	//std::cout << ss.str();
-
+	if(errorHappened)
+	{
+		exit(1);
+	}
 	return;
 }
 
@@ -410,35 +436,36 @@ int main(int argc,char** argv)
   }
   std::cout << "Waiting for connection\n";
 
-	int client_socket;
-      struct sockaddr_in client_address;
-      unsigned int client_addr_len = sizeof(client_address);
+	
+	ThreadPool tpool(4);
 
-      // Accept incoming connection
-      if ((client_socket = accept(server_socket, (struct sockaddr*) &client_address, &client_addr_len)) < 0) {
-          perror("accept failed");
-          exit(errno);
-      }
-    //std::vector<std::thread> threadPool;
-	//while(true)
-	//{
-      
+	bool isWorking = true;
+	std::thread workingchecker ([&]()
+	{
+		std::string str;
+		std::cin >> str;
+		if(str == "shutdown")
+		{
+			isWorking = false;
+			return;
+		}
+	});
+	while(isWorking)
+	{
+		int client_socket;
+		struct sockaddr_in client_address;
+		unsigned int client_addr_len = sizeof(client_address);
 
-      		std::cout<< " Connected client with address: " << inet_ntoa(client_address.sin_addr) << "\n";
+		if ((client_socket = accept(server_socket, (struct sockaddr*) &client_address, &client_addr_len)) < 0) 
+		{
+			perror("accept failed");
+		}
+			std::cout<< " Connected client with address: " << inet_ntoa(client_address.sin_addr) << "\n";
 
-           clientHandler(client_socket, inet_ntoa(client_address.sin_addr), std::ref<Bank>(bnk));
+			tpool.enqueue(std::move(clientHandler), client_socket, inet_ntoa(client_address.sin_addr), std::ref(bnk));
 
-            //clientNum.fetch_add(1);
-        
-	//}
-
-    // for (auto& thread : threadPool)
-    // {
-    //     if (thread.joinable())
-    //     {
-    //         thread.join();
-    //     }
-    // }
+			clientNum.fetch_add(1);
+	}
 
 	for(std::size_t i = 0; i < bnk.size(); ++i)
 	{
@@ -456,8 +483,68 @@ int main(int argc,char** argv)
 		std::cerr << "close: error at closing shmFd\n";
 		exit(errno);
 	}
-
+	workingchecker.join();
 	std::cout << "Thank you for using our Bank\n";
 
 	return 0;
+}
+
+ThreadPool::ThreadPool(size_t threads)
+    : stop(false)
+{
+    for(size_t i = 0;i<threads;++i)
+        workers.emplace_back(
+            [this]
+            {
+                for(;;)
+                {
+                    std::function<void()> task;
+
+                    {
+                        std::unique_lock<std::mutex> lock(this->queue_mutex);
+                        this->condition.wait(lock,
+                            [this]{ return this->stop || !this->tasks.empty(); });
+                        if(this->stop && this->tasks.empty())
+                            return;
+                        task = std::move(this->tasks.front());
+                        this->tasks.pop();
+                    }
+
+                    task();
+                }
+            }
+        );
+}
+
+template<class F, class... Args>
+void ThreadPool::enqueue(F&& f, Args&&... args) 
+{
+    using return_type = typename std::result_of<F(Args...)>::type;
+
+    auto task = std::make_shared<std::packaged_task<return_type()>>(
+            std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+        );
+        
+    std::future<return_type> res = task->get_future();
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+
+        // don't allow enqueueing after stopping the pool
+        if(stop)
+            throw std::runtime_error("enqueue on stopped ThreadPool");
+
+        tasks.emplace([task](){ (*task)(); });
+    }
+    condition.notify_one();
+}
+
+ThreadPool::~ThreadPool()
+{
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+        stop = true;
+    }
+    condition.notify_all();
+    for(std::thread &worker: workers)
+        worker.join();
 }
