@@ -9,6 +9,8 @@ class Bank
 {
 public:
 
+	Bank() : _size(0), arr(nullptr){}
+
 	Bank(std::size_t size, Bank_cell* ptr);
 
 	Bank_cell& operator[](std::size_t cellNum);
