@@ -314,12 +314,12 @@ void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
   // Receive messages from client
 	std::cout << "clientHandler:\n\n";
 	const int bufferSize = 4096;
-
+	std::string disc = "disconnect";
 	while(true)
 	{
 		//std::stringstream ss;
 		std::stringstream cmd;
-		volatile std::string buffer;
+		std::string buffer;
 		buffer.resize(bufferSize);
 
 		int rs = recv(client_socket, buffer.data(), bufferSize, 0);
@@ -329,12 +329,12 @@ void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
 			close(client_socket);
 			exit(1);
 		}
-		buffer[rs] = '\0';
+		std::cout << "\"" << buffer << "\"\n"; 
 		buffer.shrink_to_fit();
-		std::cout << buffer;
-		if(buffer == "disconnect")
+		if(buffer.data() == disc)
 		{
-			break;
+			std::cout << "i am in if section\n";
+			break;//add try finally
 		}
 		//ss << "From client " << clientIP << " number: " << buffer << '\n';
 		cmd << buffer;
@@ -344,14 +344,15 @@ void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
 		std::string res = result.str();
 		std::cout << res << std::endl;
 		int snd = send(client_socket, res.c_str(), res.size(), 0);
-		if( snd == -1)
+		if(snd == -1)
 		{
 			perror("client message send error");
+			close(client_socket);
 			exit(1);
 		}
 	
 	}
-	//ss << "client is disconnecting\n";//вот тут когда disconnect получает то падает в беск. цикл
+	//ss << "client is disconnecting\n";
 	close(client_socket);
 	clientNum.fetch_sub(1);
 	//std::cout << ss.str();

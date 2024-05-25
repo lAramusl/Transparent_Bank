@@ -42,7 +42,9 @@ int main(){
     std::string mess;
     std::string buffer;
     buffer.resize(buffsize);
+    
     std::getline(std::cin, mess);
+
     std::cout << "the message is : " << mess << "\n";
     std::cout<<"sending...\n";
     int sent = send(client_socket, mess.c_str(), mess.size(), 0);
