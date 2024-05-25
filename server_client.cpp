@@ -32,12 +32,16 @@ int main(){
     exit(errno);
   }
 
-  std::string mess;
-  while(true)
+  const int buffsize = 4096;
+
+  bool isConnected = true;
+
+  while(isConnected)
   {
     // send message to server
-    const int buffsize = 3000;
-    char buffer[3001];
+    std::string mess;
+    std::string buffer;
+    buffer.resize(buffsize);
     std::getline(std::cin, mess);
     std::cout << "the message is : " << mess << "\n";
     std::cout<<"sending...\n";
@@ -51,9 +55,9 @@ int main(){
     std::cout<<"send successfully!\n";
     if(mess == "disconnect")
     {
-      break;
+      isConnected = false;
     }
-    int reciv = recv(client_socket, buffer, buffsize, 0);
+    int reciv = recv(client_socket, buffer.data(), buffsize, 0);
     if(reciv == -1)
     {
         perror("message recive error: ");

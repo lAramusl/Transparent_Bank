@@ -312,37 +312,34 @@ std::stringstream BankAction(std::stringstream& in, Bank& bnk)
 void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
 {
   // Receive messages from client
-  std::cout << "clientHandler:\n";
-  std::size_t client_num = clientNum;
- while(true)
-  {
-      std::stringstream ss;
-	  std::stringstream cmd;
-      char buffer[3001];
-      int rs = recv(client_socket, buffer, 3000, 0);
-      if (rs == -1) {
-        perror("client socket connection error");
-        close(client_socket);
-        exit(1);
-      }
-      
-      ss << "From client " << clientIP << " number " << client_num << ":\n" << buffer << '\n';
-     // std::cout << ss.str();
-      if(buffer == "disconnect")
-      {
-        ss << "client is disconnecting\n";//вот тут когда disconnect получает то падает в беск. цикл
-        close(client_socket);
-        clientNum.fetch_sub(1);
-        std::cout << ss.str();
-       	break;
-      }
-      else if (rs > 0) {
-        ss << "Got command:\n ";
-        ss << buffer << "\n";
-		cmd << buffer << "\n";
-		std::cout << ss.str();
-        buffer[rs] = '\0';
-      }
+	std::cout << "clientHandler:\n\n";
+	const int bufferSize = 4096;
+
+	while(true)
+	{
+		//std::stringstream ss;
+		std::stringstream cmd;
+		volatile std::string buffer;
+		buffer.resize(bufferSize);
+
+		int rs = recv(client_socket, buffer.data(), bufferSize, 0);
+		if (rs == -1) 
+		{
+			perror("client socket connection error");
+			close(client_socket);
+			exit(1);
+		}
+		buffer[rs] = '\0';
+		buffer.shrink_to_fit();
+		std::cout << buffer;
+		if(buffer == "disconnect")
+		{
+			break;
+		}
+		//ss << "From client " << clientIP << " number: " << buffer << '\n';
+		cmd << buffer;
+		//std::cout << ss.str();
+
 		std::stringstream result = BankAction(cmd, bnk);
 		std::string res = result.str();
 		std::cout << res << std::endl;
@@ -350,9 +347,16 @@ void clientHandler(int client_socket, std::string clientIP, Bank& bnk)
 		if( snd == -1)
 		{
 			perror("client message send error");
+			exit(1);
 		}
- 	}
-  return;
+	
+	}
+	//ss << "client is disconnecting\n";//вот тут когда disconnect получает то падает в беск. цикл
+	close(client_socket);
+	clientNum.fetch_sub(1);
+	//std::cout << ss.str();
+
+	return;
 }
 
 
