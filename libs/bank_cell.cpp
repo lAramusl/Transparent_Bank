@@ -28,6 +28,11 @@ void Bank_cell::unfreeze()
 
 int Bank_cell::changeMax(long amount)
 {
+	if(isFrozen())
+	{
+		std::cout << "Cell " << index << "  is frozen\n";
+		return 3;
+	}
 	if(amount < currentAmount)
 	{
 		currentAmount = amount;
@@ -43,6 +48,11 @@ int Bank_cell::changeMax(long amount)
 
 int Bank_cell::changeMin(long amount)
 {
+	if(isFrozen())
+	{
+		std::cout << "Cell " << index << " is frozen\n";
+		return 3;
+	}
 	if(amount > currentAmount)
 	{
 		std::cout << "Cell " << index << ": cannot change, add some amount first\n";
@@ -61,7 +71,7 @@ int Bank_cell::deposit(long amount)
 {
 	if(isFrozen())
 	{
-		std::cout << "Cell " << index << "is frozen\n";
+		std::cout << "Cell " << index << " is frozen\n";
 		return 2;
 	}
 	if(currentAmount + amount > maxAmount)

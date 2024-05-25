@@ -40,6 +40,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			std::cout << "The max balance of cell " << cellNum << " is " << bnk[cellNum].getMax() << std::endl;
@@ -53,6 +54,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			std::cout << "The min balance of cell " << cellNum << " is " << bnk[cellNum].getMin() << std::endl;
@@ -66,6 +68,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			std::cout << "The current balance of cell " << cellNum << " is " << bnk[cellNum].getCurrent() << std::endl;
@@ -80,6 +83,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(from >= bnk.size() || to >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			std::cin >> from >> to >> amount;
 			bnk[from].wait();
@@ -96,6 +100,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			bnk[cellNum].freeze();
@@ -110,6 +115,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			bnk[cellNum].unfreeze();
@@ -125,6 +131,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			if(bnk[cellNum].credit(amount) == 0)
@@ -142,6 +149,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			if(bnk[cellNum].deposit(amount) == 0)
@@ -189,6 +197,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			if(bnk[cellNum].changeMax(newMax) == 0)
@@ -205,6 +214,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			if(bnk[cellNum].changeMin(newMin) == 0)
@@ -220,6 +230,7 @@ void BankAction(const std::string& cmd, Bank& bnk)
 			if(cellNum >= bnk.size())
 			{
 				std::cout << "Invalid bank cell number\n";
+				break;
 			}
 			bnk[cellNum].wait();
 			std::string state = "is not frozen";
